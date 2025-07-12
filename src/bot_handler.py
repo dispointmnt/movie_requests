@@ -1,7 +1,9 @@
 # This example requires the 'message_content' intent.
 
 import discord
-from discord import app_commands
+from discord.ui import View, Button
+from bot_front import *
+# from discord import app_commands
 from discord.ext import commands
 from os import environ
 from dotenv import load_dotenv
@@ -14,11 +16,89 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix='$', intents=intents)
 
+command_buffer = {}
+"""
+{user_id: {cmd:command, value1:value1, value2:value2...}}
+"""
+def validate_author(message_id, user_id):
+    return(user_id in command_buffer.keys() and message_id == command_buffer[user_id]["message_id"])
+
+
+class RequestNavigator(View):
+    @discord.ui.button(label="<<", style=discord.ButtonStyle.primary)
+    async def update_ui_backwards(self, interaction: discord.Interaction, button: discord.Button):
+        if not validate_author(interaction.message.id, interaction.user.id):
+            await interaction.response.defer()
+            return
+        command_buffer[interaction.user.id]["index"] -= 1
+        if (command_buffer[interaction.user.id]["index"] < 0):
+            command_buffer[interaction.user.id]["index"] = command_buffer[interaction.user.id]["total"]
+        
+        rendering = render(command_buffer[interaction.user.id])
+        await interaction.response.edit_message(embed=rendering["embed"], view=self)
+
+    @discord.ui.button(label="Select", style=discord.ButtonStyle.primary)
+    async def submit_request(self, interaction: discord.Interaction, button: discord.Button):
+        if not validate_author(interaction.message.id, interaction.user.id):
+            await interaction.response.defer()
+            return
+        code = add_to_requests(command_buffer[interaction.user.id]["query_list"][command_buffer[interaction.user.id]["index"]])
+        await interaction.message.delete()
+        if code == 1:
+            await interaction.response.send_message(f"Submitted \"{command_buffer[interaction.user.id]['query_list'][command_buffer[interaction.user.id]['index']]['primaryTitle']}\" successfully!")
+        if code == 0:
+            await interaction.response.send_message("A problem occurred oops msg me when this happens ill fix it")
+    
+    @discord.ui.button(label=">>", style=discord.ButtonStyle.primary)
+    async def update_ui_forward(self, interaction: discord.Interaction, button: discord.Button):
+        if not validate_author(interaction.message.id, interaction.user.id):
+            await interaction.response.defer()
+            return
+        command_buffer[interaction.user.id]["index"] += 1
+        if (command_buffer[interaction.user.id]["index"] > command_buffer[interaction.user.id]["total"]):
+            command_buffer[interaction.user.id]["index"] = 0
+
+        rendering = render(command_buffer[interaction.user.id])
+        await interaction.response.edit_message(embed=rendering["embed"], view=self)
+class QueueNavigator(View):
+
+    def __init__(self, page=1, max_page=1, timeout = 180):
+        super().__init__(timeout=timeout)
+        self.page = page
+        self.max_page = max_page
+
+    @discord.ui.button(label="<<", style=discord.ButtonStyle.primary)
+    async def queue_backward(self, interaction: discord.Interaction, button: discord.Button):
+        if not validate_author(interaction.message.id, interaction.user.id):
+            await interaction.response.defer()
+            return
+        
+        command_buffer[interaction.user.id]["page"] -= 1
+        if (command_buffer[interaction.user.id]["page"] < 0):
+            command_buffer[interaction.user.id]["page"] = len(command_buffer[interaction.user.id]["queue"])//command_buffer[interaction.user.id]["entries_pp"]
+        
+        rendering = render(command_buffer[interaction.user.id])
+        await interaction.response.edit_message(embeds=rendering["embeds"], view=self)
+    # @discord.ui.button(label=f"{}/{}", style=discord.ButtonStyle.gray)
+    # async def do_nothing(self, interaction: discord.Interaction, button: discord.Button):
+    #     pass
+    @discord.ui.button(label=">>", style=discord.ButtonStyle.primary)
+    async def queue_forward(self, interaction: discord.Interaction, button: discord.Button):
+        if not validate_author(interaction.message.id, interaction.user.id):
+            await interaction.response.defer()
+            return
+        
+        command_buffer[interaction.user.id]["page"] += 1
+        if (command_buffer[interaction.user.id]["page"] > len(command_buffer[interaction.user.id]["queue"])//command_buffer[interaction.user.id]["entries_pp"]):
+            command_buffer[interaction.user.id]["page"] = 0
+        
+        rendering = render(command_buffer[interaction.user.id])
+        await interaction.response.edit_message(embeds=rendering["embeds"], view=self)
 @bot.event
 async def on_ready():
     print(f'We have logged in as {bot.user.name}')
-    await bot.tree.sync(guild=discord.Object(id = 499186928332046336))
-    # await bot.tree.sync()
+    # await bot.tree.sync(guild=discord.Object(id = 499186928332046336))
+    await bot.tree.sync()
     print(f'Synced slash commands (hopefully)')
 
 """
@@ -28,7 +108,11 @@ Sees the current queue.
 """
 @bot.hybrid_command(name='queue', with_app_command=True, description="Views the current requests")
 async def queue(ctx):
-    await ctx.send("the current q")
+    command_buffer[ctx.author.id] = get_queue()
+    rendering = render(command_buffer[ctx.author.id])
+    
+    msg = await ctx.send(embeds=rendering["embeds"], view=QueueNavigator())
+    command_buffer[ctx.author.id]["message_id"] = msg.id
 
 """
 request:
@@ -36,9 +120,15 @@ request:
 Adds to the queue
 """
 @bot.hybrid_command(name='request', with_app_command=True, description="Request a movie to watch")
-async def request(ctx, arg):
-    await ctx.send(arg)
+async def display_request_ui(ctx, arg):
+    command_buffer[ctx.author.id] = get_query(arg)
+    rendering = render(command_buffer[ctx.author.id])
+    
+    msg = await ctx.send(embed=rendering["embed"], view=RequestNavigator())
+    command_buffer[ctx.author.id]["message_id"] = msg.id
 
+async def submit_request(ctx, arg):
+    pass
 """
 archive:
 
@@ -46,7 +136,7 @@ views the archive of watched movies
 """
 @bot.hybrid_command(name='archive', with_app_command=True, description="List of all movies watched so far")
 async def archive(ctx):
-    await ctx.send("artkive")
+    await ctx.send("ill make it later")
 
 """
 watch:
