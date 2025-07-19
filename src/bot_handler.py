@@ -120,15 +120,26 @@ request:
 Adds to the queue
 """
 @bot.hybrid_command(name='request', with_app_command=True, description="Request a movie to watch")
-async def display_request_ui(ctx, arg):
-    command_buffer[ctx.author.id] = get_query(arg)
+async def display_request_ui(ctx, args):
+    command_buffer[ctx.author.id] = get_query(args)
     rendering = render(command_buffer[ctx.author.id])
     
     msg = await ctx.send(embed=rendering["embed"], view=RequestNavigator())
     command_buffer[ctx.author.id]["message_id"] = msg.id
 
-async def submit_request(ctx, arg):
-    pass
+"""
+remove:
+
+Removes from the queue
+"""
+@bot.hybrid_command(name='request', with_app_command=True, description="Request a movie to watch")
+async def display_request_ui(ctx, args):
+    command_buffer[ctx.author.id] = get_query(args)
+    rendering = render(command_buffer[ctx.author.id])
+    
+    msg = await ctx.send(embed=rendering["embed"], view=RequestNavigator())
+    command_buffer[ctx.author.id]["message_id"] = msg.id
+
 """
 archive:
 
@@ -144,6 +155,15 @@ watch:
 Puts a movie into archive and out of requests
 """
 @bot.hybrid_command(name='watch', with_app_command=True, description="Sets a movie as watched into the archive")
+async def watch(ctx, arg):
+    await ctx.send("watch movie")
+
+"""
+rate:
+
+Puts a movie into archive and out of requests
+"""
+@bot.hybrid_command(name='rate', with_app_command=True, description="Rate a watched movie out of 10")
 async def watch(ctx, arg):
     await ctx.send("watch movie")
 
