@@ -4,7 +4,7 @@ import csv
 import datetime
 from math import ceil
 
-request_filename = "./data/req_queue.csv"
+request_filename = "./data/req_queue_uq.csv"
 archive_filename = "./data/archive.csv"
 
 def get_query(query: str) -> dict:
@@ -59,12 +59,19 @@ test_data = [
         "image_url": "https://m.media-amazon.com/images/M/MV5BNTBiYWJlMjQtOTIyMy00NTY4LWFhOWItOWZhNzc3NGMyMjc2XkEyXkFqcGc@._V1_.jpg"
     },
 ]
+
+def validate_request(uid, requesters) -> bool:
+    return not (uid in requesters.split(";"))
+
+def get_frequency(requests) -> int:
+    return len(requests.split(";"))
+
 def get_queue() -> dict:
     try:
         with open(request_filename, mode='r', newline='', encoding='utf-8') as file:
             reader = csv.DictReader(file)
             request_data = list(reader)
-            sorted_data = sorted(request_data, key=lambda a: int(a["request_frequency"]), reverse=True)
+            sorted_data = sorted(request_data, key=lambda a: get_frequency(a["requesters"]), reverse=True)
     except:
         return 0
     
@@ -74,7 +81,7 @@ def get_queue() -> dict:
             "entries_pp":5}
 #TODO change this to read from file
 
-def add_to_requests(title: dict):
+def add_to_requests(title: dict, requester: int):
     new_rows = []
     old_flag = False
     title_id = title["id"]
@@ -84,8 +91,11 @@ def add_to_requests(title: dict):
 
             for row in reader:
                 if row['id'] == str(title_id):
-                    row['request_frequency'] = str(int(row['request_frequency']) + 1)
-                    old_flag = True
+                    if validate_request(str(requester), row["requesters"]):
+                        row['requesters'] = row['requesters'] + ";" + str(requester)
+                        old_flag = True
+                    else:
+                        return 2
                 new_rows.append(row)
             if not old_flag:
                 now = datetime.datetime.now()
@@ -94,11 +104,10 @@ def add_to_requests(title: dict):
                 new_rows.append({'id':title["id"],
                                 "movie_name":title["primaryTitle"],
                                 "request_date":date_str,
-                                "request_frequency":1,
-                                "image_url":title["primaryImage"]["url"]})
+                                "requesters":requester})
                 
         with open(request_filename, 'w', newline='') as file:
-            writer = csv.DictWriter(file, fieldnames=['id', 'movie_name', 'request_date', 'request_frequency', 'image_url'])
+            writer = csv.DictWriter(file, fieldnames=['id', 'movie_name', 'request_date', 'requesters'])
             writer.writeheader()
             writer.writerows(new_rows)
     except:
@@ -159,7 +168,4 @@ def render(data: dict) -> dict:
 
 
 if __name__ == "__main__":
-    add_to_requests({
-      "id": "sdfsdfsdfsdf",
-      "type": "movie",
-      "primaryTitle": "crazy movie"})
+    pass

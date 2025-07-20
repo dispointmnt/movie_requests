@@ -42,8 +42,10 @@ class RequestNavigator(View):
         if not validate_author(interaction.message.id, interaction.user.id):
             await interaction.response.defer()
             return
-        code = add_to_requests(command_buffer[interaction.user.id]["query_list"][command_buffer[interaction.user.id]["index"]])
-        await interaction.message.delete()
+        code = add_to_requests(command_buffer[interaction.user.id]["query_list"][command_buffer[interaction.user.id]["index"]], interaction.user.id)
+        # await interaction.message.delete()
+        if code == 2:
+            await interaction.response.send_message(f"You've already requested this movie.", ephemeral=True)
         if code == 1:
             await interaction.response.send_message(f"Submitted \"{command_buffer[interaction.user.id]['query_list'][command_buffer[interaction.user.id]['index']]['primaryTitle']}\" successfully!", ephemeral=True)
         if code == 0:
@@ -134,7 +136,7 @@ remove:
 Removes from the queue
 """
 @bot.hybrid_command(name='remove', with_app_command=True, description="Request a movie to watch")
-async def display_request_ui(ctx, args):
+async def display_remove_ui(ctx, args):
     pass
 
 """
