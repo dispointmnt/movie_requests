@@ -45,9 +45,9 @@ class RequestNavigator(View):
         code = add_to_requests(command_buffer[interaction.user.id]["query_list"][command_buffer[interaction.user.id]["index"]])
         await interaction.message.delete()
         if code == 1:
-            await interaction.response.send_message(f"Submitted \"{command_buffer[interaction.user.id]['query_list'][command_buffer[interaction.user.id]['index']]['primaryTitle']}\" successfully!")
+            await interaction.response.send_message(f"Submitted \"{command_buffer[interaction.user.id]['query_list'][command_buffer[interaction.user.id]['index']]['primaryTitle']}\" successfully!", ephemeral=True)
         if code == 0:
-            await interaction.response.send_message("A problem occurred oops msg me when this happens ill fix it")
+            await interaction.response.send_message("A problem occurred oops msg me when this happens ill fix it", ephemeral=True)
     
     @discord.ui.button(label=">>", style=discord.ButtonStyle.primary)
     async def update_ui_forward(self, interaction: discord.Interaction, button: discord.Button):
@@ -60,6 +60,7 @@ class RequestNavigator(View):
 
         rendering = render(command_buffer[interaction.user.id])
         await interaction.response.edit_message(embed=rendering["embed"], view=self)
+        
 class QueueNavigator(View):
 
     def __init__(self, page=1, max_page=1, timeout = 180):
@@ -111,7 +112,7 @@ async def queue(ctx):
     command_buffer[ctx.author.id] = get_queue()
     rendering = render(command_buffer[ctx.author.id])
     
-    msg = await ctx.send(embeds=rendering["embeds"], view=QueueNavigator())
+    msg = await ctx.send(embeds=rendering["embeds"], view=QueueNavigator(), ephemeral=True)
     command_buffer[ctx.author.id]["message_id"] = msg.id
 
 """
@@ -124,7 +125,7 @@ async def display_request_ui(ctx, args):
     command_buffer[ctx.author.id] = get_query(args)
     rendering = render(command_buffer[ctx.author.id])
     
-    msg = await ctx.send(embed=rendering["embed"], view=RequestNavigator())
+    msg = await ctx.send(embed=rendering["embed"], view=RequestNavigator(), ephemeral=True)
     command_buffer[ctx.author.id]["message_id"] = msg.id
 
 """
@@ -132,13 +133,9 @@ remove:
 
 Removes from the queue
 """
-@bot.hybrid_command(name='request', with_app_command=True, description="Request a movie to watch")
+@bot.hybrid_command(name='remove', with_app_command=True, description="Request a movie to watch")
 async def display_request_ui(ctx, args):
-    command_buffer[ctx.author.id] = get_query(args)
-    rendering = render(command_buffer[ctx.author.id])
-    
-    msg = await ctx.send(embed=rendering["embed"], view=RequestNavigator())
-    command_buffer[ctx.author.id]["message_id"] = msg.id
+    pass
 
 """
 archive:
