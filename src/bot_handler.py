@@ -100,7 +100,7 @@ async def on_ready():
     print(f'We have logged in as {bot.user.name}')
     # await bot.tree.sync(guild=discord.Object(id = 499186928332046336))
     await bot.tree.sync()
-    print(f'Synced slash commands (hopefully)')
+    print(f'Synced slash commands (hopefully)') 
 
 """
 queue:
