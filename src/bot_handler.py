@@ -23,6 +23,14 @@ command_buffer = {}
 def validate_author(message_id, user_id):
     return(user_id in command_buffer.keys() and message_id == command_buffer[user_id]["message_id"])
 
+class RemoveButton(View):
+    @discord.ui.button(label="Confirm", style=discord.ButtonStyle.primary)
+    async def remove_request(self, interaction: discord.Interaction, button: discord.Button):
+        code = remove_from_requests(command_buffer[interaction.user.id]["query_list"][command_buffer[interaction.user.id]["index"]], interaction.user.id)
+        if code == 1:
+            await interaction.response.send_message(f"Removed \"{command_buffer[interaction.user.id]['query_list'][command_buffer[interaction.user.id]['index']]['primaryTitle']}\" successfully!", ephemeral=True)
+        if code == 0:
+            await interaction.response.send_message("A problem occurred oops msg me when this happens ill fix it", ephemeral=True)
 
 class RequestNavigator(View):
     @discord.ui.button(label="<<", style=discord.ButtonStyle.primary)
@@ -43,14 +51,14 @@ class RequestNavigator(View):
             await interaction.response.defer()
             return
         code = add_to_requests(command_buffer[interaction.user.id]["query_list"][command_buffer[interaction.user.id]["index"]], interaction.user.id)
-        # await interaction.message.delete()
+        
         if code == 2:
-            await interaction.response.send_message(f"You've already requested this movie.", ephemeral=True)
+            await interaction.response.send_message(f"You've already requested this movie. Would you like to unrequest it?", ephemeral=True, view=RemoveButton())
         if code == 1:
             await interaction.response.send_message(f"Submitted \"{command_buffer[interaction.user.id]['query_list'][command_buffer[interaction.user.id]['index']]['primaryTitle']}\" successfully!", ephemeral=True)
         if code == 0:
             await interaction.response.send_message("A problem occurred oops msg me when this happens ill fix it", ephemeral=True)
-    
+        
     @discord.ui.button(label=">>", style=discord.ButtonStyle.primary)
     async def update_ui_forward(self, interaction: discord.Interaction, button: discord.Button):
         if not validate_author(interaction.message.id, interaction.user.id):
@@ -111,6 +119,7 @@ Sees the current queue.
 """
 @bot.hybrid_command(name='queue', with_app_command=True, description="Views the current requests")
 async def queue(ctx):
+    print(f"{ctx.author.name}: queue")
     command_buffer[ctx.author.id] = get_queue()
     rendering = render(command_buffer[ctx.author.id])
     
@@ -124,20 +133,12 @@ Adds to the queue
 """
 @bot.hybrid_command(name='request', with_app_command=True, description="Request a movie to watch")
 async def display_request_ui(ctx, args):
+    print(f"{ctx.author.name}: request")
     command_buffer[ctx.author.id] = get_query(args)
     rendering = render(command_buffer[ctx.author.id])
     
     msg = await ctx.send(embed=rendering["embed"], view=RequestNavigator(), ephemeral=True)
     command_buffer[ctx.author.id]["message_id"] = msg.id
-
-"""
-remove:
-
-Removes from the queue
-"""
-@bot.hybrid_command(name='remove', with_app_command=True, description="Request a movie to watch")
-async def display_remove_ui(ctx, args):
-    pass
 
 """
 archive:
@@ -146,6 +147,7 @@ views the archive of watched movies
 """
 @bot.hybrid_command(name='archive', with_app_command=True, description="List of all movies watched so far")
 async def archive(ctx):
+    print(f"{ctx.author.name}: archive")
     await ctx.send("ill make it later")
 
 """
@@ -155,6 +157,7 @@ Puts a movie into archive and out of requests
 """
 @bot.hybrid_command(name='watch', with_app_command=True, description="Sets a movie as watched into the archive")
 async def watch(ctx, arg):
+    print(f"{ctx.author.name}: watch")
     await ctx.send("watch movie")
 
 """

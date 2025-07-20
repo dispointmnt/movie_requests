@@ -81,6 +81,34 @@ def get_queue() -> dict:
             "entries_pp":5}
 #TODO change this to read from file
 
+def remove_from_csv(uid: str, requesters: str) -> str:
+    req_list = requesters.split(";")
+    req_list.remove(uid)
+    return ";".join(req_list)
+
+def remove_from_requests(title: dict, requester: int):
+    new_rows = []
+    title_id = title["id"]
+    try:
+        with open(request_filename, mode='r', newline='', encoding='utf-8') as file:
+            reader = csv.DictReader(file)
+
+            for row in reader:
+                if row['id'] == str(title_id):
+                    if not validate_request(str(requester), row["requesters"]):
+                        row['requesters'] = remove_from_csv(str(requester), row['requesters'])
+                if row["requesters"] != "":
+                    new_rows.append(row)
+                
+        with open(request_filename, 'w', newline='') as file:
+            writer = csv.DictWriter(file, fieldnames=['id', 'movie_name', 'request_date', 'requesters'])
+            writer.writeheader()
+            writer.writerows(new_rows)
+    except:
+        return 0
+    
+    return 1
+
 def add_to_requests(title: dict, requester: int):
     new_rows = []
     old_flag = False
@@ -149,12 +177,12 @@ def render(data: dict) -> dict:
             entry = queue[i]
             embed = Embed(
                 title=entry["movie_name"],
-                description=f"Date Requested: {entry['request_date']}\n\# people requested: {entry['request_frequency']}",
+                description=f"Date Requested: {entry['request_date']}\n\# people requested: {get_frequency(entry['requesters'])}",
                 color=0x2f3136,
                 url = "https://www.imdb.com/title/" + entry["id"]
             )
             embed.set_author(name=str(i+1))
-            embed.set_thumbnail(url=entry['image_url'])
+            # embed.set_thumbnail(url=entry['image_url'])
 
             embeds.append(embed)
         return {"embeds":embeds}
