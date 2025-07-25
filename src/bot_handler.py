@@ -5,15 +5,10 @@ from discord.ui import View, Button
 from bot_front import *
 # from discord import app_commands
 from discord.ext import commands
-
-# For locally run
 from os import environ
 from dotenv import load_dotenv
+
 load_dotenv()
-
-# For the PI:
-# from env.py import environ
-
 token = environ["TOKEN"]
 
 intents = discord.Intents.default()
