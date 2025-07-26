@@ -55,7 +55,7 @@ class RequestNavigator(View):
         if code == 2:
             await interaction.response.send_message(f"You've already requested this movie. Would you like to unrequest it?", ephemeral=True, view=RemoveButton())
         if code == 1:
-            await interaction.response.send_message(f"Submitted \"{command_buffer[interaction.user.id]['query_list'][command_buffer[interaction.user.id]['index']]['primaryTitle']}\" successfully!")
+            await interaction.response.send_message(f"Requested \"{command_buffer[interaction.user.id]['query_list'][command_buffer[interaction.user.id]['index']]['primaryTitle']}\" successfully.")
         if code == 0:
             await interaction.response.send_message("A problem occurred oops msg me when this happens ill fix it", ephemeral=True)
         
