@@ -7,6 +7,8 @@ from math import ceil
 request_filename = "./data/req_queue_uq.csv"
 archive_filename = "./data/archive.csv"
 
+entries_pp = 10
+
 def get_query(query: str) -> dict:
     response = query_movie(query)
     titles = response["titles"]
@@ -76,10 +78,22 @@ def get_queue() -> dict:
         return 0
     
     return {"command":"queue", 
-            "queue":sorted_data,
+            "res":sorted_data,
             "page":0,
-            "entries_pp":5}
+            "entries_pp":entries_pp}
 #TODO change this to read from file
+def get_archive() -> dict:
+        try:
+            with open(archive_filename, mode='r', newline='', encoding='utf-8') as file:
+                reader = csv.DictReader(file)
+                request_data = list(reader)
+        except:
+            return 0
+        
+        return {"command":"archive", 
+                "res":request_data,
+                "page":0,
+                "entries_pp":entries_pp}
 
 def remove_from_csv(uid: str, requesters: str) -> str:
     req_list = requesters.split(";")
@@ -143,7 +157,6 @@ def add_to_requests(title: dict, requester: int):
     
     return 1
 
-
 def render(data: dict) -> dict:
     if data["command"] == "request":
         display_title = data["query_list"][data["index"]]
@@ -160,39 +173,49 @@ def render(data: dict) -> dict:
         return {"embed":embed}
     
     if data["command"] == "queue":
-        queue = data["queue"]
+        queue = data["res"]
         page = data["page"]
         entries_pp = data["entries_pp"]
 
         start_index = (page*entries_pp)
-        embeds = [Embed(
+        embed = Embed(
                 title="Request Queue",
                 description=f"{page+1}/{ceil(len(queue)/entries_pp)}",
                 color=0x2f3136
-                )]
+                )
 
         for i in range(start_index, start_index+entries_pp):
             if (i >= len(queue)):
                 continue
             entry = queue[i]
-            embed = Embed(
-                title=entry["movie_name"],
-                description=f"Date Requested: {entry['request_date']}\n\# people requested: {get_frequency(entry['requesters'])}",
-                color=0x2f3136,
-                url = "https://www.imdb.com/title/" + entry["id"]
-            )
-            embed.set_author(name=str(i+1))
-            # embed.set_thumbnail(url=entry['image_url'])
+            embed.add_field(name=entry["movie_name"], value=f"[imdb]({'https://www.imdb.com/title/' + entry['id']}) Voters: {get_frequency(entry['requesters'])}", inline=False)
 
-            embeds.append(embed)
-        return {"embeds":embeds}
+        return {"embed":embed}
     if data["command"] == "archive":
-        return
+
+        archive = data["res"]
+        page = data["page"]
+        entries_pp = data["entries_pp"]
+
+        start_index = (page*entries_pp)
+        embed = Embed(
+                title="Movie Archive",
+                description=f"{page+1}/{ceil(len(archive)/entries_pp)}",
+                color=0x2f3136
+                )
+
+        for i in range(start_index, start_index+entries_pp):
+            if (i >= len(archive)):
+                continue
+            entry = archive[i]
+            embed.add_field(name=entry["movie_name"], value=f"[imdb]({'https://www.imdb.com/title/' + entry['movie_id']}) Date watched: {entry['date_watched']}", inline=False)
+        return {"embed":embed}
     if data["command"] == "watch":
         return
     
     print(f"Some error occured with rendering with data:\n{data}")
     return None
+
 
 
 if __name__ == "__main__":

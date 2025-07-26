@@ -86,10 +86,10 @@ class QueueNavigator(View):
         
         command_buffer[interaction.user.id]["page"] -= 1
         if (command_buffer[interaction.user.id]["page"] < 0):
-            command_buffer[interaction.user.id]["page"] = len(command_buffer[interaction.user.id]["queue"])//command_buffer[interaction.user.id]["entries_pp"]
+            command_buffer[interaction.user.id]["page"] = len(command_buffer[interaction.user.id]["res"])//command_buffer[interaction.user.id]["entries_pp"]
         
         rendering = render(command_buffer[interaction.user.id])
-        await interaction.response.edit_message(embeds=rendering["embeds"], view=self)
+        await interaction.response.edit_message(embed=rendering["embed"], view=self)
     # @discord.ui.button(label=f"{}/{}", style=discord.ButtonStyle.gray)
     # async def do_nothing(self, interaction: discord.Interaction, button: discord.Button):
     #     pass
@@ -100,11 +100,11 @@ class QueueNavigator(View):
             return
         
         command_buffer[interaction.user.id]["page"] += 1
-        if (command_buffer[interaction.user.id]["page"] > len(command_buffer[interaction.user.id]["queue"])//command_buffer[interaction.user.id]["entries_pp"]):
+        if (command_buffer[interaction.user.id]["page"] > len(command_buffer[interaction.user.id]["res"])//command_buffer[interaction.user.id]["entries_pp"]):
             command_buffer[interaction.user.id]["page"] = 0
         
         rendering = render(command_buffer[interaction.user.id])
-        await interaction.response.edit_message(embeds=rendering["embeds"], view=self)
+        await interaction.response.edit_message(embed=rendering["embed"], view=self)
 @bot.event
 async def on_ready():
     print(f'We have logged in as {bot.user.name}')
@@ -123,7 +123,7 @@ async def queue(ctx):
     command_buffer[ctx.author.id] = get_queue()
     rendering = render(command_buffer[ctx.author.id])
     
-    msg = await ctx.send(embeds=rendering["embeds"], view=QueueNavigator(), ephemeral=True)
+    msg = await ctx.send(embed=rendering["embed"], view=QueueNavigator(), ephemeral=True)
     command_buffer[ctx.author.id]["message_id"] = msg.id
 
 """
@@ -148,7 +148,11 @@ views the archive of watched movies
 @bot.hybrid_command(name='archive', with_app_command=True, description="List of all movies watched so far")
 async def archive(ctx):
     print(f"{ctx.author.name}: archive")
-    await ctx.send("ill make it later")
+    command_buffer[ctx.author.id] = get_archive()
+    rendering = render(command_buffer[ctx.author.id])
+    
+    msg = await ctx.send(embed=rendering["embed"], view=QueueNavigator(), ephemeral=True)
+    command_buffer[ctx.author.id]["message_id"] = msg.id
 
 """
 watch:
